@@ -1,0 +1,29 @@
+exercice4:
+
+-- Create Books and Borrowed Books Tables
+
+CREATE TABLE books (book_id NUMBER PRIMARY KEY, copies_available NUMBER);
+CREATE TABLE borrowed_books (user_id NUMBER, book_id NUMBER);
+
+-- Function to check book availability
+
+CREATE OR REPLACE FUNCTION get_book_availability(bk_id NUMBER) RETURN NUMBER IS
+    available_copies NUMBER;
+BEGIN
+    SELECT copies_available INTO available_copies FROM books WHERE book_id = bk_id;
+    RETURN available_copies;
+END;
+
+-- Procedure to borrow a book
+
+CREATE OR REPLACE PROCEDURE borrow_book(bk_id NUMBER, usr_id NUMBER) IS
+BEGIN
+    IF get_book_availability(bk_id) > 0 THEN
+        UPDATE books SET copies_available = copies_available - 1 WHERE book_id = bk_id;
+        INSERT INTO borrowed_books (user_id, book_id) VALUES (usr_id, bk_id);
+    ELSE
+        RAISE_APPLICATION_ERROR(-20002, 'Book not available'); 
+ -- Error if no copies available
+
+    END IF;
+END;

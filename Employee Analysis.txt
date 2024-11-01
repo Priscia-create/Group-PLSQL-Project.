@@ -1,0 +1,43 @@
+Employee Analysis:
+
+-- Procedure to analyze attendance for a each month
+
+CREATE OR REPLACE PROCEDURE analyze_attendance(month_in NUMBER, year_in NUMBER) IS
+    emp_name VARCHAR2(100);
+    total_present NUMBER;
+    total_absent NUMBER;
+    attendance_percentage NUMBER;
+    emp_id NUMBER;
+BEGIN
+    FOR employee IN (SELECT employee_id, first_name || ' ' || last_name AS full_name FROM employees) LOOP
+        emp_id := employee.employee_id;
+        emp_name := employee.full_name;
+
+        -- Calculate presence and absence
+
+        SELECT COUNT(CASE WHEN status = 'Present' THEN 1 END),
+               COUNT(CASE WHEN status = 'Absent' THEN 1 END)
+        INTO total_present, total_absent
+        FROM attendance
+        WHERE employee_id = emp_id
+        AND EXTRACT(MONTH FROM attendance_date) = month_in
+        AND EXTRACT(YEAR FROM attendance_date) = year_in;
+
+        -- Attendance percentage
+
+
+        IF (total_present + total_absent) > 0 THEN
+            attendance_percentage := (total_present / (total_present + total_absent)) * 100;
+        ELSE
+            attendance_percentage := 0;
+        END IF;
+
+        -- Display results
+
+        DBMS_OUTPUT.PUT_LINE('Employee: ' || emp_name);
+        DBMS_OUTPUT.PUT_LINE('Total Presents: ' || total_present);
+        DBMS_OUTPUT.PUT_LINE('Total Absents: ' || total_absent);
+        DBMS_OUTPUT.PUT_LINE('Attendance Percentage: ' || attendance_percentage || '%');
+        DBMS_OUTPUT.PUT_LINE('--------------------------------');
+    END LOOP;
+END;

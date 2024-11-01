@@ -1,0 +1,47 @@
+exercice2:
+
+-- Create Order Tables
+
+CREATE TABLE orders (order_id NUMBER PRIMARY KEY);
+CREATE TABLE products (product_id NUMBER PRIMARY KEY, price NUMBER, stock NUMBER);
+CREATE TABLE order_items (order_id NUMBER, product_id NUMBER, quantity NUMBER);
+
+-- Function to calculate total order amount
+
+CREATE OR REPLACE FUNCTION calculate_order_total(ord_id NUMBER) RETURN NUMBER IS
+    total_amount NUMBER := 0;
+BEGIN
+    SELECT SUM(price * quantity) INTO total_amount
+    FROM order_items JOIN products ON order_items.product_id = products.product_id
+    WHERE order_id = ord_id;
+    RETURN total_amount;
+END;
+
+-- Procedure to process the order and update inventory
+
+CREATE OR REPLACE PROCEDURE process_order(ord_id NUMBER) IS
+    total NUMBER;
+BEGIN
+    -- Calculate the total order amount
+    total := calculate_order_total(ord_id);
+
+    -- Display alert if the total exceeds limit
+
+    IF total > 1000 THEN
+        DBMS_OUTPUT.PUT_LINE('Order exceeds limit!');
+    END IF;
+
+    -- Update the inventory for each item of the order
+
+    FOR item IN (SELECT product_id, quantity FROM order_items WHERE order_id = ord_id) LOOP
+        UPDATE products
+        SET stock = stock - item.quantity
+        WHERE product_id = item.product_id;
+        
+        -- Check if inventory update succeeded
+
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20003, 'Product not found in inventory or insufficient stock');
+        END IF;
+    END LOOP;
+END;
